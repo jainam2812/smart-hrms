@@ -8,7 +8,7 @@ function LeaveManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
 
-  // State ofr approval and Rejection
+  // State for approval and Rejection
   const [selectedLeaveId, setSelectedLeaveId] = useState(null);
   const [actionType, setActionType] = useState(""); // 'approve' or 'reject'
   const [commentText, setCommentText] = useState("");
@@ -17,6 +17,10 @@ function LeaveManagement() {
   const [viewLeave, setViewLeave] = useState(null);
 
   useEffect(() => {
+    fetchLeaves();
+  }, []);
+
+  const fetchLeaves = () => {
     getAllLeaves()
       .then((res) => {
         setLeaves(res.data);
@@ -24,11 +28,11 @@ function LeaveManagement() {
       .catch((err) => {
         console.error(err);
       });
-  }, [leaves]);
+  };
 
   // Filters the List based on Search input and dropdown value
   const filteredLeaves = leaves.filter((leave) => {
-    const employeeName = leave.userName;
+    const employeeName = leave.userName || "";
     const matchesSearch = employeeName
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
@@ -39,7 +43,7 @@ function LeaveManagement() {
     return matchesSearch && matchesStatus;
   });
 
-  const handleActionCLick = (id, type) => {
+  const handleActionClick = (id, type) => {
     setSelectedLeaveId(id);
     setActionType(type);
     setCommentText("");
@@ -55,12 +59,16 @@ function LeaveManagement() {
         : rejectLeave(selectedLeaveId, commentText);
 
     apiCall
-      .then((res) => {
+      .then(() => {
         // Update leaves state to reflect the change
         setLeaves((prevLeaves) =>
           prevLeaves.map((leave) =>
             leave.id === selectedLeaveId
-              ? { ...leave, status: actionType === "approve" ? "Approved" : "Rejected", adminComment: commentText }
+              ? {
+                  ...leave,
+                  status: actionType === "approve" ? "Approved" : "Rejected",
+                  comment: commentText,
+                }
               : leave
           )
         );
@@ -80,6 +88,7 @@ function LeaveManagement() {
     setActionType("");
     setCommentText("");
   };
+
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
@@ -147,13 +156,13 @@ function LeaveManagement() {
                     <>
                       <button
                         className="text-green-600 mr-2 hover:underline"
-                        onClick={() => handleActionCLick(leave.id, "approve")}
+                        onClick={() => handleActionClick(leave.id, "approve")}
                       >
                         Approve
                       </button>
                       <button
                         className="text-red-600 hover:underline"
-                        onClick={() => handleActionCLick(leave.id, "reject")}
+                        onClick={() => handleActionClick(leave.id, "reject")}
                       >
                         Reject
                       </button>
@@ -172,14 +181,14 @@ function LeaveManagement() {
           ) : (
             <tr>
               <td colSpan={8} className="text-center p-4 text-gray-500 italic">
-                No leave requests Found.
+                No leave requests found.
               </td>
             </tr>
           )}
         </tbody>
       </table>
 
-      {/* Comment box for approve/Reject */}
+      {/* Comment box for Approve/Reject */}
       {selectedLeaveId && (
         <div className="mt-6 bg-gray-100 p-4 rounded shadow-md w-2/3">
           <h3 className="text-lg font-semibold mb-2">
@@ -191,14 +200,15 @@ function LeaveManagement() {
             onChange={(e) => setCommentText(e.target.value)}
             className="w-full p-2 border rounded mb-2"
             rows={3}
-            placeholder="Enter comment (e.g., reason for approvel/rejection)"
+            placeholder="Enter comment (e.g., reason for approval/rejection)"
           />
           <div className="flex gap-4">
             <button
               onClick={handleConfirmAction}
+              disabled={!commentText.trim()}
               className={`px-4 py-2 text-white rounded ${
                 actionType === "approve" ? "bg-green-600" : "bg-red-600"
-              }`}
+              } ${!commentText.trim() ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               Confirm {actionType === "approve" ? "Approval" : "Rejection"}
             </button>
@@ -242,7 +252,7 @@ function LeaveManagement() {
               className="mt-4 bg-blue-600 text-white px-4 py-2 rounded"
               onClick={() => setViewLeave(null)}
             >
-              CLose
+              Close
             </button>
           </div>
         </div>
